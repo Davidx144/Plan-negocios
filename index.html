@@ -15,7 +15,7 @@
         .section-title {
             border-bottom: 2px solid #6366F1; /* Indigo-500 */
             padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem; /* Action 1: Increased margin-bottom */
         }
         .content-section {
             margin-bottom: 2rem;
@@ -63,16 +63,37 @@
             background-color: #2563EB; /* Blue-600 */
         }
 
+        #mobile-menu-button {
+            /* Position will be handled by flex alignment in header, adding some margin if needed */
+            /* Ensure it's visible by default, Tailwind's md:hidden hides it on larger screens */
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .flex-container {
                 flex-direction: column;
             }
-            .sidebar {
-                width: 100%;
-                margin-bottom: 1rem;
-                max-height: 50vh; /* Limit height on mobile */
-                overflow-y: auto; /* Allow scrolling for sidebar */
+            aside.sidebar { /* More specific selector */
+                display: block; /* Keep it block for animation, but position it off-screen */
+                position: fixed;
+                top: 0;
+                left: -280px; /* Start off-screen (using max-width for consistency) */
+                height: 100vh;
+                z-index: 40; /* Tailwind z-40 */
+                background-color: #F9FAFB; /* Gray-50 or another suitable background */
+                width: 80%;
+                max-width: 280px;
+                overflow-y: auto;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+                margin-bottom: 0;
+                max-height: none;
+                transition: left 0.3s ease-in-out; /* Animation for sliding */
+            }
+            .sidebar-open {
+                left: 0; /* Slide in */
+            }
+            #sidebar-close-button.md\:hidden { /* Specificity for md:hidden */
+                display: block !important; /* Ensure close button is visible on mobile when sidebar is open */
             }
             .main-content {
                 width: 100%;
@@ -82,10 +103,54 @@
                 height: 250px;
             }
         }
+        #page-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 30; /* Below sidebar (z-40), above content */
+            display: none; /* Hidden by default */
+            transition: opacity 0.3s ease-in-out; /* Optional: fade effect */
+            opacity: 0; /* Start fully transparent for fade-in */
+        }
+        #page-overlay.active {
+            display: block;
+            opacity: 1; /* Fade to visible */
+        }
+        .body-no-scroll {
+            overflow: hidden;
+        }
+        .content-section p { /* Action 3: Default paragraph styling */
+            margin-bottom: 1rem; /* Equivalent to mb-4 */
+            line-height: 1.625; /* Equivalent to leading-relaxed */
+        }
+        .content-section ul, .content-section ol { /* Action 4: Default list styling */
+            margin-bottom: 1rem; /* Equivalent to mb-4 */
+            line-height: 1.625; /* Equivalent to leading-relaxed */
+        }
+        /* Remove margin-top from first p, ul, ol if it's the direct child of a content subsection div */
+        .content-section > div > p:first-child,
+        .content-section > div > ul:first-child,
+        .content-section > div > ol:first-child {
+            margin-top: 0;
+        }
+        /* Specific adjustments for paragraphs that had mt-2, they will now rely on the default mb-4 from previous p */
+        .content-section p.mt-2 { /* Override if mt-2 was specifically needed for spacing between ps */
+             margin-top: 0.5rem; /* Keep the mt-2 if it exists */
+        }
+        .content-section ul.mt-2, .content-section ol.mt-2 { /* Keep mt-2 for lists if it was there */
+            margin-top: 0.5rem;
+        }
+        .content-section ul.space-y-2, .content-section ol.space-y-2 { /* If space-y is used, it handles inner spacing */
+            margin-bottom: 1rem; /* Ensure bottom margin is still applied to the list itself */
+        }
+
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
-
+    <div id="page-overlay"></div>
     <div class="container mx-auto p-4">
         <header class="bg-white shadow-md rounded-lg p-6 mb-8">
             <div class="flex flex-col md:flex-row justify-between items-center">
@@ -96,13 +161,25 @@
                 <button onclick="window.print()" class="print-button mt-4 md:mt-0">
                     Exportar a PDF / Imprimir
                 </button>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="p-2 text-gray-600 hover:text-indigo-700 focus:outline-none focus:text-indigo-700">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </header>
 
         <div class="flex flex-col md:flex-row flex-container">
             <!-- Sidebar Navigation -->
             <aside class="sidebar w-full md:w-1/4 bg-white shadow-md rounded-lg p-6 sticky top-8 self-start md:max-h-[calc(100vh-4rem)] md:overflow-y-auto">
-                <h2 class="text-xl font-semibold text-indigo-600 mb-4">Índice</h2>
+                <button id="sidebar-close-button" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 md:hidden">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <h2 class="text-xl font-semibold text-indigo-600 mb-4 mt-8 md:mt-0">Índice</h2> {/* Added mt-8 for spacing due to absolute positioned button */}
                 <nav id="toc">
                     <!-- Links will be populated by JavaScript -->
                 </nav>
@@ -115,13 +192,13 @@
                     <h2 class="text-2xl font-semibold text-indigo-700 section-title">1. Resumen</h2>
                     
                     <div id="resumen-ejecutivo" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">1.1. Resumen Ejecutivo</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">1.1. Resumen Ejecutivo</h3>
                         <p>Orquestia se posiciona como un catalizador de innovación externa para empresas de todos los tamaños (pequeñas, medianas y grandes), con un lanzamiento simultáneo en Colombia y España y una clara visión de expansión. Nuestro enfoque principal es la automatización de procesos y la aceleración de la transformación digital. Lo hacemos de una manera democratizada, eficiente, rápida y recurrente, operando como un laboratorio de innovación que ofrece soluciones modulares, escalables y asequibles.</p>
-                        <p class="mt-2">Este plan de negocios detalla nuestra estrategia para consolidar nuestra posición en estos mercados iniciales, expandir nuestra oferta de valor y asegurar un crecimiento sostenible, presentando un caso sólido para inversionistas, aliados estratégicos y el equipo interno.</p>
+                        <p>Este plan de negocios detalla nuestra estrategia para consolidar nuestra posición en estos mercados iniciales, expandir nuestra oferta de valor y asegurar un crecimiento sostenible, presentando un caso sólido para inversionistas, aliados estratégicos y el equipo interno.</p>
                     </div>
 
                     <div id="analisis-swot" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">1.2. Análisis SWOT</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">1.2. Análisis SWOT</h3>
                         <p>Un análisis detallado FODA (Fortalezas, Oportunidades, Debilidades, Amenazas) que evalúa la posición estratégica de Orquestia.</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <div class="bg-green-100 p-4 rounded-lg">
@@ -167,7 +244,7 @@
                     </div>
 
                     <div id="modelos-de-negocio" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">1.3. Modelos de Negocio</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">1.3. Modelos de Negocio</h3>
                         <p>Orquestia opera bajo un modelo de "Innovación como Servicio" (IaaS) y consultoría especializada. Nuestros modelos de ingresos incluyen:</p>
                         <ul class="list-disc list-inside ml-4">
                             <li><strong>Proyectos de Automatización y Transformación:</strong> Desarrollo e implementación de soluciones a medida.</li>
@@ -175,7 +252,7 @@
                             <li><strong>Consultoría Estratégica:</strong> Asesoramiento para la hoja de ruta de innovación y transformación digital.</li>
                             <li><strong>Talleres y Capacitación:</strong> Programas para empoderar a los equipos internos de nuestros clientes, incluyendo formación especializada en el uso de IA.</li>
                         </ul>
-                        <p class="mt-2">Este enfoque diversificado nos permite adaptarnos a las necesidades y presupuestos de una amplia gama de clientes, desde startups hasta corporaciones consolidadas, fomentando relaciones a largo plazo.</p>
+                        <p>Este enfoque diversificado nos permite adaptarnos a las necesidades y presupuestos de una amplia gama de clientes, desde startups hasta corporaciones consolidadas, fomentando relaciones a largo plazo.</p>
                          <div class="mt-4 p-4 bg-indigo-50 rounded-lg shadow">
                             <h4 class="text-lg font-semibold text-indigo-700 mb-2">Visualización del Modelo de Negocio (Canvas Conceptual)</h4>
                             <p class="text-sm text-gray-600 mb-1">A continuación, se presenta un esquema conceptual del Business Model Canvas para Orquestia. En una versión interactiva completa, cada bloque sería expandible.</p>
@@ -198,9 +275,9 @@
                     </div>
 
                     <div id="analisis-de-viabilidad" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">1.4. Análisis de Viabilidad</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">1.4. Análisis de Viabilidad</h3>
                         <p>La viabilidad de Orquestia se sustenta en la creciente demanda de digitalización y automatización en Colombia y España, la escalabilidad de nuestras soluciones modulares y un modelo de costos controlado adaptado a operaciones binacionales. Proyectamos alcanzar el punto de equilibrio en [Número] meses, con un crecimiento de ingresos del [Porcentaje]% anual durante los primeros 5 años. Este análisis se detalla en la sección financiera.</p>
-                        <p class="mt-2">Factores clave para la viabilidad:</p>
+                        <p>Factores clave para la viabilidad:</p>
                         <ul class="list-disc list-inside ml-4">
                             <li><strong>Demanda del Mercado:</strong> Fuerte y en expansión en ambos países.</li>
                             <li><strong>Propuesta de Valor Diferenciada:</strong> Enfoque en democratización, agilidad y capacitación especializada en IA.</li>
@@ -215,13 +292,13 @@
                     <h2 class="text-2xl font-semibold text-indigo-700 section-title">2. Investigación De Mercado</h2>
 
                     <div id="panorama-de-la-industria" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">2.1. Panorama De La Industria</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">2.1. Panorama De La Industria</h3>
                         <p>La industria de la transformación digital y automatización de procesos está en auge tanto en Colombia como en España, siguiendo la tendencia global. Impulsada por la necesidad de competitividad, eficiencia operativa y adaptación a nuevas dinámicas de mercado, empresas de todos los sectores están invirtiendo en tecnología. Tecnologías clave como la Inteligencia Artificial (IA), Machine Learning (ML), Robotic Process Automation (RPA), Cloud Computing e Internet of Things (IoT) son los pilares de esta transformación en ambas regiones.</p>
-                        <p class="mt-2">Se observa una tendencia hacia soluciones más ágiles, personalizadas y con un ROI claro y rápido, especialmente en el segmento PyME que busca alternativas a las grandes consultoras tradicionales tanto en el mercado colombiano como en el español.</p>
+                        <p>Se observa una tendencia hacia soluciones más ágiles, personalizadas y con un ROI claro y rápido, especialmente en el segmento PyME que busca alternativas a las grandes consultoras tradicionales tanto en el mercado colombiano como en el español.</p>
                     </div>
 
                     <div id="publico-objetivo" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">2.2. Público Objetivo</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">2.2. Público Objetivo</h3>
                         <p>Orquestia se dirige a tres segmentos principales en Colombia y España:</p>
                         <ol class="list-decimal list-inside ml-4">
                             <li><strong>Pequeñas y Medianas Empresas (PyMEs):</strong> Aquellas que buscan iniciar o acelerar su transformación digital pero carecen de los recursos o el conocimiento interno para hacerlo de manera efectiva. Buscan soluciones asequibles, modulares y con impacto rápido.</li>
@@ -231,9 +308,9 @@
                     </div>
 
                     <div id="tamano-y-tendencias-del-mercado" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">2.3. Tamaño y Tendencias Del Mercado</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">2.3. Tamaño y Tendencias Del Mercado</h3>
                         <p>El mercado global de transformación digital se valoró en [USD Cifra] en [Año] y se espera que alcance [USD Cifra] para [Año], creciendo a una CAGR de [Porcentaje]%. En América Latina (con Colombia como mercado clave) y Europa (con España como mercado clave), el crecimiento es igualmente significativo, impulsado por la adopción de tecnologías en la nube y la necesidad de digitalizar procesos.</p>
-                        <p class="mt-2">Tendencias clave (relevantes para CO y ES):</p>
+                        <p>Tendencias clave (relevantes para CO y ES):</p>
                         <ul class="list-disc list-inside ml-4">
                             <li><strong>Hiperautomatización:</strong> Combinación de múltiples herramientas de automatización (RPA, IA, ML).</li>
                             <li><strong>Low-Code/No-Code Platforms:</strong> Democratización del desarrollo de aplicaciones.</li>
@@ -248,7 +325,7 @@
                     </div>
 
                     <div id="analisis-de-competidores" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">2.4. Análisis De Competidores</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">2.4. Análisis De Competidores</h3>
                         <p>Nuestros principales competidores en Colombia y España incluyen:</p>
                         <ul class="list-disc list-inside ml-4">
                             <li><strong>Grandes Consultoras (Ej: Accenture, Deloitte, IBM, Indra en España, consultoras locales fuertes en Colombia):</strong> Ofrecen soluciones integrales pero a menudo costosas y menos ágiles.</li>
@@ -256,7 +333,7 @@
                             <li><strong>Startups de Nicho y Consultoras Boutique (locales en CO y ES):</strong> Similares en agilidad, pero pueden carecer de la amplitud de soluciones modulares o el enfoque de "laboratorio de innovación" y la oferta de capacitación en IA de Orquestia.</li>
                             <li><strong>Desarrolladores Freelance y Pequeñas Agencias Digitales:</strong> Pueden ofrecer soluciones puntuales pero sin una visión estratégica integral o escalabilidad garantizada.</li>
                         </ul>
-                        <p class="mt-2">La ventaja competitiva de Orquestia radica en su propuesta de valor de "innovación democratizada", combinando la agilidad y personalización de una boutique con la robustez y escalabilidad de soluciones modulares, la capacitación experta en IA, y un precio accesible para un mercado más amplio en ambos países.</p>
+                        <p>La ventaja competitiva de Orquestia radica en su propuesta de valor de "innovación democratizada", combinando la agilidad y personalización de una boutique con la robustez y escalabilidad de soluciones modulares, la capacitación experta en IA, y un precio accesible para un mercado más amplio en ambos países.</p>
                         <div class="overflow-x-auto mt-4">
                             <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow">
                                 <thead class="bg-indigo-100">
@@ -309,9 +386,9 @@
                     <p>Orquestia ofrece un portafolio de soluciones y servicios diseñados para funcionar como un área de innovación externa, enfocada en automatizar procesos y acelerar la transformación digital de forma democratizada, eficiente, rápida y recurrente, con un fuerte componente de capacitación en IA.</p>
 
                     <div id="ofertas-principales" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">3.1. Ofertas Principales</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">3.1. Ofertas Principales</h3>
                         <p>Nuestras ofertas principales se centran en actuar como un laboratorio de innovación con soluciones modulares, escalables y asequibles:</p>
-                        <ul class="list-disc list-inside ml-4 space-y-2 mt-2">
+                        <ul class="list-disc list-inside ml-4 space-y-2"> {/* Removed mt-2, will be handled by p's new default mb or first-child rule */}
                             <li>
                                 <strong>Diagnóstico y Hoja de Ruta de Transformación Digital:</strong>
                                 Análisis exhaustivo de los procesos y la madurez digital del cliente para diseñar una estrategia de transformación personalizada y priorizada.
@@ -342,7 +419,7 @@
                     </div>
 
                     <div id="oportunidades-de-expansion" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">3.2. Oportunidades De Expansión</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">3.2. Oportunidades De Expansión</h3>
                         <ul class="list-disc list-inside ml-4 space-y-2">
                             <li><strong>Desarrollo de Productos SaaS Verticales:</strong> Creación de soluciones de software como servicio especializadas para nichos de mercado específicos (ej. automatización para el sector salud, retail, etc.) basados en los aprendizajes de los proyectos en CO/ES.</li>
                             <li><strong>Expansión Geográfica:</strong> Llevar el modelo Orquestia a otras ciudades dentro de Colombia y España, y posteriormente a otros países de Latinoamérica y Europa.</li>
@@ -353,7 +430,7 @@
                     </div>
 
                     <div id="ofertas-secundarias" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">3.3. Ofertas Secundarias</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">3.3. Ofertas Secundarias</h3>
                          <ul class="list-disc list-inside ml-4 space-y-2">
                             <li><strong>Mantenimiento y Soporte Evolutivo:</strong> Planes de soporte para las soluciones implementadas, asegurando su correcto funcionamiento y adaptación a cambios futuros.</li>
                             <li><strong>Auditorías Tecnológicas y de Procesos:</strong> Evaluaciones puntuales para identificar cuellos de botella y oportunidades de mejora.</li>
@@ -363,7 +440,7 @@
                     </div>
 
                     <div id="servicio-al-cliente" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">3.4. Servicio Al Cliente</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">3.4. Servicio Al Cliente</h3>
                         <p>El servicio al cliente en Orquestia se basa en la proactividad, la transparencia y la construcción de relaciones a largo plazo. Contamos con:</p>
                         <ul class="list-disc list-inside ml-4">
                             <li>Gestores de proyecto dedicados para cada cliente.</li>
@@ -373,35 +450,35 @@
                             <li>Encuestas de satisfacción y mecanismos de feedback continuo.</li>
                             <li>Soporte técnico eficiente en español (adaptado a modismos de CO/ES).</li>
                         </ul>
-                        <p class="mt-2">Nuestro objetivo es ser percibidos no solo como proveedores, sino como verdaderos aliados estratégicos en la transformación digital de nuestros clientes en ambos mercados.</p>
+                        <p>Nuestro objetivo es ser percibidos no solo como proveedores, sino como verdaderos aliados estratégicos en la transformación digital de nuestros clientes en ambos mercados.</p>
                     </div>
                 </section>
 
                 <section id="ventas-y-marketing" class="content-section">
                     <h2 class="text-2xl font-semibold text-indigo-700 section-title">4. Ventas Y Marketing</h2>
                     <div id="resumen-de-marketing" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">4.1. Resumen De Marketing</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">4.1. Resumen De Marketing</h3>
                         <p>La estrategia de marketing y ventas de Orquestia se centrará en posicionarnos como líderes en innovación externa y capacitación en IA para empresas en Colombia y España, con una visión clara de expansión futura. Utilizaremos un enfoque multicanal, priorizando plataformas profesionales como LinkedIn, complementado con una presencia activa en Instagram y canales de comunicación directa como WhatsApp Business y bots telefónicos. La generación de contenido de valor, la participación en eventos clave y la oferta de charlas y conferencias serán pilares fundamentales para atraer y educar a nuestro público objetivo.</p>
                     </div>
                     <div id="branding-e-identidad" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">4.2. Branding & Identidad</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">4.2. Branding & Identidad</h3>
                         <p>Orquestia se proyectará como una marca moderna, experta, accesible y confiable. La identidad visual y el tono de comunicación serán consistentes pero adaptados a las particularidades culturales de Colombia y España. Se destacará nuestra capacidad de "orquestar" soluciones complejas de manera simple y efectiva, y nuestro compromiso con la democratización de la tecnología y la capacitación en IA.</p>
-                        <ul class="list-disc list-inside ml-4 mt-2">
+                        <ul class="list-disc list-inside ml-4"> {/* Removed mt-2 */}
                             <li><strong>Valores Clave:</strong> Innovación, Eficiencia, Transparencia, Colaboración, Empoderamiento (a través de la capacitación).</li>
                             <li><strong>Tono de Voz:</strong> Profesional pero cercano, educativo, inspirador y orientado a resultados.</li>
                             <li><strong>Identidad Visual:</strong> (Detallar elementos visuales, logotipos, paleta de colores - información de orquestia.net).</li>
                         </ul>
                     </div>
                     <div id="retencion-de-clientes" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">4.3. Retención De Clientes</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">4.3. Retención De Clientes</h3>
                         <p>Fomentaremos la lealtad a través de la excelencia en el servicio, resultados medibles, comunicación proactiva y la oferta continua de valor (nuevas soluciones, actualizaciones, capacitación avanzada). Se implementarán programas de seguimiento post-proyecto y se buscará convertir a los clientes en embajadores de la marca mediante casos de éxito y testimonios.</p>
                     </div>
                     <div id="presencia-en-linea" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">4.4. Presencia En Línea</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">4.4. Presencia En Línea</h3>
                         <p>El sitio web (orquestia.net) será el hub central, con versiones o secciones adaptadas para Colombia y España. Será intuitivo, responsive y optimizado para la conversión, ofreciendo información clara sobre servicios, casos de éxito, recursos educativos (blog, whitepapers) y detalles sobre charlas, conferencias y programas de capacitación en IA.</p>
                     </div>
                     <div id="redes-sociales" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">4.5. Redes Sociales</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">4.5. Redes Sociales</h3>
                         <ul class="list-disc list-inside ml-4 space-y-2">
                             <li>
                                 <strong>LinkedIn (Canal Principal):</strong>
@@ -434,11 +511,11 @@
                         </ul>
                     </div>
                     <div id="seo-y-contenido" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">4.6. SEO y Contenido</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">4.6. SEO y Contenido</h3>
                         <p>Se desarrollará una estrategia de contenido bilingüe (español de Colombia y España) y optimizada para SEO, enfocada en palabras clave como "transformación digital PyMEs [CO/ES]", "automatización de procesos [CO/ES]", "consultoría IA empresas", "capacitación IA [CO/ES]", "innovación externa". Se crearán artículos de blog, guías, whitepapers, casos de éxito y videos que aborden los dolores y necesidades de nuestro público objetivo en ambos mercados.</p>
                     </div>
                     <div id="marketing-digital" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">4.7. Marketing Digital</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">4.7. Marketing Digital</h3>
                         <ul class="list-disc list-inside ml-4 space-y-2">
                             <li><strong>Publicidad en LinkedIn:</strong> Campañas segmentadas para alcanzar a directivos y gerentes de PyMEs y grandes empresas en Colombia y España interesados en transformación digital e IA.</li>
                             <li><strong>Google Ads:</strong> Campañas de búsqueda para palabras clave transaccionales y de investigación.</li>
@@ -447,7 +524,7 @@
                         </ul>
                     </div>
                     <div id="participacion-de-la-comunidad" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">4.8. Participación De La Comunidad</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">4.8. Participación De La Comunidad</h3>
                         <p>Orquestia buscará activamente construir y participar en comunidades empresariales y tecnológicas en Colombia y España:</p>
                         <ul class="list-disc list-inside ml-4 space-y-2">
                             <li><strong>Charlas y Conferencias:</strong> Ofrecer ponencias gratuitas y de pago en eventos del sector, cámaras de comercio, universidades y asociaciones empresariales sobre transformación digital, automatización e IA.</li>
@@ -463,14 +540,14 @@
                     <h2 class="text-2xl font-semibold text-indigo-700 section-title">5. Finanzas</h2>
                     <p>Esta sección presentará un panorama financiero detallado de Orquestia, incluyendo proyecciones, análisis de costos, y necesidades de financiamiento. Las cifras son ilustrativas y requerirían datos reales para un plan formal.</p>
                     <div id="ingresos" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">5.1. Ingresos</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">5.1. Ingresos</h3>
                         <p>Fuentes de ingresos proyectadas (proyectos, suscripciones, consultoría, capacitación en IA). Proyecciones a 1, 3 y 5 años para operaciones en Colombia y España.</p>
                         <div class="chart-container mt-4">
                             <canvas id="revenueChart"></canvas>
                         </div>
                     </div>
                     <div id="gastos" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">5.2. Gastos</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">5.2. Gastos</h3>
                         <p>Costos operativos (personal bilingüe, marketing internacional, tecnología, oficinas en CO/ES), costos variables.</p>
                          <div class="overflow-x-auto mt-4">
                             <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow">
@@ -487,33 +564,33 @@
                             </table>
                         </div>
                     </div>
-                    <div id="financiamiento" class="mb-6"><h3 class="text-xl font-medium text-gray-700 mb-2">5.3. Financiamiento</h3><p>[Necesidades de financiamiento actuales y futuras para operaciones en CO/ES y expansión, fuentes (capital semilla, venture capital, préstamos)...]</p></div>
-                    <div id="dividendos" class="mb-6"><h3 class="text-xl font-medium text-gray-700 mb-2">5.4. Dividendos</h3><p>[Política de dividendos si aplica...]</p></div>
-                    <div id="impuestos" class="mb-6"><h3 class="text-xl font-medium text-gray-700 mb-2">5.5. Impuestos</h3><p>[Consideraciones fiscales relevantes para Colombia y España...]</p></div>
+                    <div id="financiamiento" class="mb-6"><h3 class="text-xl font-medium text-gray-700 mb-3">5.3. Financiamiento</h3><p>[Necesidades de financiamiento actuales y futuras para operaciones en CO/ES y expansión, fuentes (capital semilla, venture capital, préstamos)...]</p></div>
+                    <div id="dividendos" class="mb-6"><h3 class="text-xl font-medium text-gray-700 mb-3">5.4. Dividendos</h3><p>[Política de dividendos si aplica...]</p></div>
+                    <div id="impuestos" class="mb-6"><h3 class="text-xl font-medium text-gray-700 mb-3">5.5. Impuestos</h3><p>[Consideraciones fiscales relevantes para Colombia y España...]</p></div>
                     <div id="perdidas-y-ganancias" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">5.6. Pérdidas y Ganancias (Proyectado)</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">5.6. Pérdidas y Ganancias (Proyectado)</h3>
                         <p>[Estado de resultados proyectado para los próximos 3-5 años, consolidado y/o por país...]</p>
                          <p class="text-center text-gray-500 italic mt-4">[Tabla de Estado de Pérdidas y Ganancias Proyectado]</p>
                     </div>
                     <div id="hoja-de-balance" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">5.7. Hoja De Balance (Proyectado)</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">5.7. Hoja De Balance (Proyectado)</h3>
                         <p>[Balance general proyectado...]</p>
                         <p class="text-center text-gray-500 italic mt-4">[Tabla de Hoja de Balance Proyectada]</p>
                     </div>
                     <div id="flujo-de-efectivo" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">5.8. Flujo De Efectivo (Proyectado)</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">5.8. Flujo De Efectivo (Proyectado)</h3>
                         <p>[Estado de flujo de efectivo proyectado...]</p>
                         <p class="text-center text-gray-500 italic mt-4">[Tabla de Flujo de Efectivo Proyectado]</p>
                     </div>
-                    <div id="plan-de-financiamiento" class="mb-6"><h3 class="text-xl font-medium text-gray-700 mb-2">5.9. Plan De Financiamiento</h3><p>[Detalle de cómo se utilizarán los fondos obtenidos para el crecimiento en CO/ES y expansión...]</p></div>
+                    <div id="plan-de-financiamiento" class="mb-6"><h3 class="text-xl font-medium text-gray-700 mb-3">5.9. Plan De Financiamiento</h3><p>[Detalle de cómo se utilizarán los fondos obtenidos para el crecimiento en CO/ES y expansión...]</p></div>
                 </section>
 
                 <section id="operaciones" class="content-section">
                     <h2 class="text-2xl font-semibold text-indigo-700 section-title">6. Operaciones</h2>
                     <div id="equipo-y-roles" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">6.1. Equipo Y Roles</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">6.1. Equipo Y Roles</h3>
                         <p>[Presentación del equipo fundador y roles clave con experiencia y/o conocimiento de los mercados colombiano y español. Estructura organizacional adaptada para operaciones binacionales...]</p>
-                        <p class="mt-2">Roles clave a cubrir (considerando equipos locales o remotos coordinados):</p>
+                        <p>Roles clave a cubrir (considerando equipos locales o remotos coordinados):</p>
                         <ul class="list-disc list-inside ml-4">
                             <li>CEO / Director General (Visión global)</li>
                             <li>Country Manager (Colombia) / Country Manager (España) - Opcional según escala</li>
@@ -525,9 +602,9 @@
                         </ul>
                     </div>
                     <div id="plan-de-operaciones" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">6.2. Plan De Operaciones</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">6.2. Plan De Operaciones</h3>
                         <p>Metodología de Orquestia (ágil, modular, centrada en el cliente) aplicada consistentemente en Colombia y España, con adaptaciones locales si es necesario. Procesos clave: captación de clientes (con marketing localizado), diagnóstico, diseño de solución, implementación (considerando equipos remotos/locales), seguimiento y soporte multicanal (WhatsApp, bots telefónicos).</p>
-                        <p class="mt-2">Fases típicas de un proyecto:</p>
+                        <p>Fases típicas de un proyecto:</p>
                         <ol class="list-decimal list-inside ml-4">
                             <li><strong>Descubrimiento y Diagnóstico:</strong> Entender necesidades y procesos del cliente (adaptado a la cultura empresarial local).</li>
                             <li><strong>Diseño de Solución:</strong> Proponer la arquitectura y alcance del proyecto.</li>
@@ -538,7 +615,7 @@
                         </ol>
                     </div>
                     <div id="analisis-de-riesgos" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">6.3. Análisis De Riesgos</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">6.3. Análisis De Riesgos</h3>
                         <p>[Identificación de riesgos operativos, de mercado (CO/ES), financieros, tecnológicos y planes de mitigación...]</p>
                          <ul class="list-disc list-inside ml-4">
                             <li><strong>Riesgo de Mercado:</strong> Cambios en la demanda, aparición de nuevos competidores en CO/ES. Mitigación: Innovación constante, diversificación de servicios, fuerte posicionamiento en capacitación IA.</li>
@@ -548,15 +625,15 @@
                             <li><strong>Riesgo Regulatorio/Cultural:</strong> Diferencias normativas y culturales entre CO y ES. Mitigación: Asesoría legal local, equipo con conocimiento de ambos mercados.</li>
                         </ul>
                     </div>
-                    <div id="cumplimiento-normativo" class="mb-6"><h3 class="text-xl font-medium text-gray-700 mb-2">6.4. Cumplimiento Normativo</h3><p>[Regulaciones de protección de datos (RGPD en España, Ley 1581 en Colombia), propiedad intelectual, normativas laborales específicas de cada país...]</p></div>
+                    <div id="cumplimiento-normativo" class="mb-6"><h3 class="text-xl font-medium text-gray-700 mb-3">6.4. Cumplimiento Normativo</h3><p>[Regulaciones de protección de datos (RGPD en España, Ley 1581 en Colombia), propiedad intelectual, normativas laborales específicas de cada país...]</p></div>
                 </section>
 
                 <section id="plan-de-implementacion" class="content-section">
                     <h2 class="text-2xl font-semibold text-indigo-700 section-title">7. Plan De Implementación</h2>
                     <div id="pre-lanzamiento" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">7.1. Pre-Lanzamiento / Fase Inicial (Operaciones en CO y ES)</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">7.1. Pre-Lanzamiento / Fase Inicial (Operaciones en CO y ES)</h3>
                         <p>[Hitos clave: Establecimiento legal en CO y ES, desarrollo de MVP de soluciones modulares, consolidación del equipo inicial bicultural, estrategia de marketing digital para ambos mercados, primeros clientes piloto en CO y ES...]</p>
-                        <p class="mt-2">Cronograma conceptual ( próximos 6-12 meses):</p>
+                        <p>Cronograma conceptual ( próximos 6-12 meses):</p>
                          <ul class="list-disc list-inside ml-4">
                              <li>Mes 1-3: Finalización de desarrollo de producto/servicio core. Setup legal y financiero en CO/ES. Adaptación de web y materiales de marketing.</li>
                              <li>Mes 4-6: Lanzamiento de campañas de marketing iniciales en LinkedIn (CO/ES). Primeras charlas/webinars sobre IA. Adquisición primeros clientes en ambos mercados.</li>
@@ -564,13 +641,13 @@
                          </ul>
                     </div>
                     <div id="post-lanzamiento" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">7.2. Consolidación y Crecimiento (Próximos 12-36 meses)</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">7.2. Consolidación y Crecimiento (Próximos 12-36 meses)</h3>
                         <p>[Escalamiento de operaciones en Colombia y España, expansión del equipo en ambos países, desarrollo de nuevas funcionalidades/servicios (especialmente en capacitación IA), penetración de mercado, búsqueda de alianzas estratégicas locales e internacionales...]</p>
                     </div>
                     <div id="plan-de-5-anos" class="mb-6">
-                        <h3 class="text-xl font-medium text-gray-700 mb-2">7.3. Plan De 5 Años</h3>
+                        <h3 class="text-xl font-medium text-gray-700 mb-3">7.3. Plan De 5 Años</h3>
                         <p>[Visión a largo plazo: Liderazgo en el nicho de innovación externa y capacitación en IA para PyMEs en Colombia y España, expansión a otros mercados de LATAM y Europa, desarrollo de propiedad intelectual significativa, posible internacionalización o adquisición...]</p>
-                        <p class="mt-2">Objetivos clave a 5 años:</p>
+                        <p>Objetivos clave a 5 años:</p>
                         <ul class="list-disc list-inside ml-4">
                             <li>Alcanzar [Número] clientes activos (distribuidos entre CO, ES y nuevos mercados).</li>
                             <li>Facturación anual de [USD Monto].</li>
@@ -788,6 +865,99 @@
                 }
             });
         }
+
+        // --- Mobile Menu Toggle Script ---
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const sidebar = document.querySelector('aside.sidebar');
+        const sidebarCloseButton = document.getElementById('sidebar-close-button');
+        const pageOverlay = document.getElementById('page-overlay');
+        const sidebarMaxWidth = 280; // Should match CSS max-width
+
+        function openSidebar() {
+            if (!sidebar || !pageOverlay || !mobileMenuButton) return;
+
+            sidebar.classList.add('sidebar-open');
+            pageOverlay.classList.add('active');
+            document.body.classList.add('body-no-scroll');
+
+            // Change hamburger to close icon
+            mobileMenuButton.innerHTML = `
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            `;
+        }
+
+        function closeSidebar() {
+            if (!sidebar || !pageOverlay || !mobileMenuButton) return;
+
+            sidebar.classList.remove('sidebar-open');
+            pageOverlay.classList.remove('active');
+            document.body.classList.remove('body-no-scroll');
+
+            // Change back to hamburger icon
+            mobileMenuButton.innerHTML = `
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+                </svg>
+            `;
+        }
+
+        if (mobileMenuButton && sidebar) {
+            mobileMenuButton.addEventListener('click', () => {
+                const isOpen = sidebar.classList.contains('sidebar-open');
+                if (isOpen) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+        }
+
+        if (sidebarCloseButton) {
+            sidebarCloseButton.addEventListener('click', closeSidebar);
+        }
+
+        if (pageOverlay) {
+            pageOverlay.addEventListener('click', closeSidebar);
+        }
+
+        function checkSidebarState() {
+            const isMobile = window.innerWidth <= 768;
+            if (!isMobile) {
+                // If sidebar is open and screen resized to desktop, close it.
+                if (sidebar && sidebar.classList.contains('sidebar-open')) {
+                    closeSidebar(); // This will also remove body-no-scroll
+                } else {
+                    // Ensure body scroll is enabled if sidebar is not open on desktop
+                    document.body.classList.remove('body-no-scroll');
+                }
+                // Reset sidebar style for desktop view (remove fixed position effects)
+                if (sidebar) {
+                    sidebar.style.left = ''; // Reset left for desktop
+                }
+            } else {
+                // On mobile, ensure the sidebar is correctly positioned off-screen if not open
+                if (sidebar && !sidebar.classList.contains('sidebar-open')) {
+                    sidebar.style.left = `-${sidebarMaxWidth}px`;
+                    document.body.classList.remove('body-no-scroll'); // Ensure body scroll is enabled
+                } else if (sidebar && sidebar.classList.contains('sidebar-open')) {
+                    document.body.classList.add('body-no-scroll'); // Ensure body scroll is disabled if somehow open
+                }
+            }
+        }
+
+        window.addEventListener('resize', checkSidebarState);
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial state for mobile: sidebar should be off-screen
+            if (window.innerWidth <= 768) {
+                if (sidebar && !sidebar.classList.contains('sidebar-open')) {
+                     sidebar.style.left = `-${sidebarMaxWidth}px`; // Ensure it's off-screen
+                }
+            }
+            checkSidebarState(); // Run on load
+        });
+
     </script>
 </body>
 </html>
